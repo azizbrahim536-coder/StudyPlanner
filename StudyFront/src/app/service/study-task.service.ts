@@ -100,4 +100,11 @@ export class StudyTaskService {
       `${this.apiUrl}/statistics`
     );
   }
+
+  createTasks(tasks: StudyTask[]): Observable<StudyTask[]> {
+  return this.http.post<StudyTask[]>(
+    `${this.apiUrl}/batch`,
+    tasks
+  );
+}
 }

@@ -105,4 +105,13 @@ public class StudyTaskController {
     ) {
         studyTaskService.deleteTask(id);
     }
+    @PostMapping("/batch")
+    @ResponseStatus(HttpStatus.CREATED)
+    public List<StudyTask> createTasks(
+            @Valid
+            @RequestBody
+            List<@Valid StudyTask> tasks
+    ) {
+        return studyTaskService.createTasks(tasks);
+    }
 }

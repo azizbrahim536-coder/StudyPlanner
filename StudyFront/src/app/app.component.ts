@@ -7,6 +7,12 @@ import {
 } from '@angular/forms';
 
 import {
+  AiPlannerService,
+  GeneratePlanRequest,
+  StudyDifficulty
+} from './service/ai-planner.service';
+
+import {
   Priority,
   StudyTask,
   TaskStatistics,
@@ -24,6 +30,8 @@ import {
 })
 export class AppComponent implements OnInit {
 
+
+
   tasks: StudyTask[] = [];
 
   statistics: TaskStatistics = {
@@ -32,6 +40,15 @@ export class AppComponent implements OnInit {
     inProgress: 0,
     completed: 0
   };
+
+aiPlanForm: FormGroup;
+generatedTasks: StudyTask[] = [];
+
+aiGenerating = false;
+aiSaving = false;
+
+aiErrorMessage = '';
+aiSuccessMessage = '';
 
   taskForm: FormGroup;
 
@@ -47,64 +64,65 @@ export class AppComponent implements OnInit {
   errorMessage = '';
   successMessage = '';
 
-  constructor(
-    private studyTaskService: StudyTaskService,
-    private formBuilder: FormBuilder
-  ) {
-    this.taskForm = this.formBuilder.group({
-      title: [
-        '',
-        [
-          Validators.required,
-          Validators.maxLength(150)
-        ]
-      ],
-
-      description: [
-        '',
-        [
-          Validators.maxLength(3000)
-        ]
-      ],
-
-      subject: [
-        '',
-        [
-          Validators.required,
-          Validators.maxLength(100)
-        ]
-      ],
-
-      studyDate: [
-        this.getToday(),
-        Validators.required
-      ],
-
-      startTime: [
-        '18:00',
-        Validators.required
-      ],
-
-      durationMinutes: [
-        60,
-        [
-          Validators.required,
-          Validators.min(15),
-          Validators.max(600)
-        ]
-      ],
-
-      priority: [
-        'MEDIUM',
-        Validators.required
-      ],
-
-      status: [
-        'TODO',
-        Validators.required
+constructor(
+  private studyTaskService: StudyTaskService,
+  private aiPlannerService: AiPlannerService,
+  private formBuilder: FormBuilder
+) {
+  this.taskForm = this.formBuilder.group({
+    title: ['', Validators.required],
+    description: [''],
+    subject: ['', Validators.required],
+    studyDate: [this.getToday(), Validators.required],
+    startTime: ['18:00', Validators.required],
+    durationMinutes: [
+      60,
+      [
+        Validators.required,
+        Validators.min(15),
+        Validators.max(600)
       ]
-    });
-  }
+    ],
+    priority: ['MEDIUM', Validators.required],
+    status: ['TODO', Validators.required]
+  });
+
+  this.aiPlanForm = this.formBuilder.group({
+    subject: [
+      '',
+      Validators.required
+    ],
+
+    examDate: [
+      this.getTomorrow(),
+      Validators.required
+    ],
+
+    chapters: [
+      '',
+      Validators.required
+    ],
+
+    availableHoursPerDay: [
+      2,
+      [
+        Validators.required,
+        Validators.min(0.5),
+        Validators.max(8)
+      ]
+    ],
+
+    preferredStartTime: [
+      '18:00',
+      Validators.required
+    ],
+
+    difficulty: [
+      'MEDIUM',
+      Validators.required
+    ]
+  });
+}
 
   ngOnInit(): void {
     this.loadTasks();
@@ -402,4 +420,209 @@ export class AppComponent implements OnInit {
 
     return `${year}-${month}-${day}`;
   }
+
+  generateStudyPlan(): void {
+  this.aiErrorMessage = '';
+  this.aiSuccessMessage = '';
+
+  if (this.aiPlanForm.invalid) {
+    this.aiPlanForm.markAllAsTouched();
+    return;
+  }
+
+  const value = this.aiPlanForm.getRawValue();
+
+  const chapters = String(value.chapters)
+    .split(/[\n,;]+/)
+    .map((chapter: string) => chapter.trim())
+    .filter((chapter: string) => chapter.length > 0);
+
+  if (chapters.length === 0) {
+    this.aiErrorMessage =
+      'Ajoutez au moins un chapitre.';
+    return;
+  }
+
+  const request: GeneratePlanRequest = {
+    subject: String(value.subject).trim(),
+
+    examDate: value.examDate,
+
+    chapters,
+
+    availableHoursPerDay: Number(
+      value.availableHoursPerDay
+    ),
+
+    preferredStartTime:
+      value.preferredStartTime,
+
+    difficulty:
+      value.difficulty as StudyDifficulty
+  };
+
+  this.aiGenerating = true;
+  this.generatedTasks = [];
+
+  this.aiPlannerService
+    .generatePlan(request)
+    .subscribe({
+      next: (response) => {
+        this.generatedTasks = response.tasks.map(
+          task => ({
+            ...task,
+
+            startTime:
+              task.startTime?.substring(0, 5)
+              || '18:00',
+
+            status: 'TODO'
+          })
+        );
+
+        this.aiSuccessMessage =
+          `${this.generatedTasks.length} séances générées.`;
+
+        this.aiGenerating = false;
+      },
+
+      error: (error) => {
+        console.error('Erreur IA:', error);
+
+        this.aiErrorMessage =
+          error?.error?.message ||
+          'Impossible de générer le planning.';
+
+        this.aiGenerating = false;
+      }
+    });
+}
+private normalizeTime(time: string): string {
+  if (!time) {
+    return '18:00:00';
+  }
+
+  return time.length === 5
+    ? `${time}:00`
+    : time;
+}
+
+private getTomorrow(): string {
+  const tomorrow = new Date();
+
+  tomorrow.setDate(
+    tomorrow.getDate() + 1
+  );
+
+  const year = tomorrow.getFullYear();
+
+  const month = String(
+    tomorrow.getMonth() + 1
+  ).padStart(2, '0');
+
+  const day = String(
+    tomorrow.getDate()
+  ).padStart(2, '0');
+
+  return `${year}-${month}-${day}`;
+}
+
+removeGeneratedTask(index: number): void {
+  this.generatedTasks.splice(index, 1);
+
+  // Actualiser la référence du tableau pour Angular
+  this.generatedTasks = [...this.generatedTasks];
+
+  if (this.generatedTasks.length === 0) {
+    this.aiSuccessMessage = '';
+  }
+}
+
+clearGeneratedPlan(): void {
+  this.generatedTasks = [];
+  this.aiErrorMessage = '';
+  this.aiSuccessMessage = '';
+}
+
+saveGeneratedPlan(): void {
+  this.aiErrorMessage = '';
+  this.aiSuccessMessage = '';
+
+  if (this.generatedTasks.length === 0) {
+    this.aiErrorMessage =
+      'Le planning ne contient aucune tâche.';
+    return;
+  }
+
+  const containsInvalidTask = this.generatedTasks.some(
+    task =>
+      !task.title?.trim() ||
+      !task.subject?.trim() ||
+      !task.studyDate ||
+      !task.startTime ||
+      Number(task.durationMinutes) < 15
+  );
+
+  if (containsInvalidTask) {
+    this.aiErrorMessage =
+      'Certaines séances contiennent des informations invalides.';
+    return;
+  }
+
+  const tasksToSave: StudyTask[] =
+    this.generatedTasks.map(task => ({
+      title: task.title.trim(),
+
+      description:
+        task.description?.trim() || '',
+
+      subject: task.subject.trim(),
+
+      studyDate: task.studyDate,
+
+      startTime: this.normalizeTime(
+        task.startTime
+      ),
+
+      durationMinutes: Number(
+        task.durationMinutes
+      ),
+
+      priority: task.priority,
+
+      status: 'TODO'
+    }));
+
+  this.aiSaving = true;
+
+  this.studyTaskService
+    .createTasks(tasksToSave)
+    .subscribe({
+      next: savedTasks => {
+        this.aiSuccessMessage =
+          `${savedTasks.length} séances enregistrées avec succès.`;
+
+        this.generatedTasks = [];
+        this.aiSaving = false;
+
+        this.loadTasks();
+        this.loadStatistics();
+      },
+
+      error: error => {
+        console.error(
+          'Erreur pendant l’enregistrement :',
+          error
+        );
+
+        this.aiErrorMessage =
+          error?.error?.message ||
+          'Impossible d’enregistrer le planning.';
+
+        this.aiSaving = false;
+      }
+    });
+}
+
+
 }

@@ -8,6 +8,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.ArrayList;
+
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -123,5 +127,40 @@ public class StudyTaskService {
         }
 
         return value.trim();
+    }
+
+    @Transactional
+    public List<StudyTask> createTasks(
+            List<StudyTask> tasks
+    ) {
+        if (tasks == null || tasks.isEmpty()) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Le planning ne contient aucune tâche"
+            );
+        }
+
+        if (tasks.size() > 50) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Le planning ne peut pas dépasser 50 tâches"
+            );
+        }
+
+        List<StudyTask> preparedTasks = new ArrayList<>();
+
+        for (StudyTask task : tasks) {
+            task.setId(null);
+
+            if (task.getPriority() == null) {
+                task.setPriority(Priority.MEDIUM);
+            }
+
+            task.setStatus(TaskStatus.TODO);
+
+            preparedTasks.add(task);
+        }
+
+        return studyTaskRepository.saveAll(preparedTasks);
     }
 }

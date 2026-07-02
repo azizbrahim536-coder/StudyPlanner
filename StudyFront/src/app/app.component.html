@@ -74,6 +74,270 @@
       </article>
 
     </section>
+    <section class="ai-planner-card">
+
+  <div class="section-header">
+    <div>
+      <span class="section-label">
+        Intelligence artificielle
+      </span>
+
+      <h2>Générer un planning avec l’IA</h2>
+
+      <p class="section-description">
+        Ajoutez votre matière, la date de l’examen
+        et les chapitres à réviser.
+      </p>
+    </div>
+
+    <div class="ai-icon">✨</div>
+  </div>
+
+  <div
+    *ngIf="aiErrorMessage"
+    class="alert alert-error"
+  >
+    {{ aiErrorMessage }}
+  </div>
+
+  <div
+    *ngIf="aiSuccessMessage"
+    class="alert alert-success"
+  >
+    {{ aiSuccessMessage }}
+  </div>
+
+  <form
+    [formGroup]="aiPlanForm"
+    (ngSubmit)="generateStudyPlan()"
+  >
+    <div class="ai-form-grid">
+
+      <div class="form-group">
+        <label>Matière</label>
+
+        <input
+          type="text"
+          formControlName="subject"
+          placeholder="Spring Boot"
+        >
+      </div>
+
+      <div class="form-group">
+        <label>Date de l’examen</label>
+
+        <input
+          type="date"
+          formControlName="examDate"
+        >
+      </div>
+
+      <div class="form-group">
+        <label>Heures par jour</label>
+
+        <input
+          type="number"
+          min="0.5"
+          max="8"
+          step="0.5"
+          formControlName="availableHoursPerDay"
+        >
+      </div>
+
+      <div class="form-group">
+        <label>Heure préférée</label>
+
+        <input
+          type="time"
+          formControlName="preferredStartTime"
+        >
+      </div>
+
+      <div class="form-group">
+        <label>Difficulté</label>
+
+        <select formControlName="difficulty">
+          <option value="EASY">Facile</option>
+          <option value="MEDIUM">Moyenne</option>
+          <option value="HARD">Difficile</option>
+        </select>
+      </div>
+
+      <div class="form-group chapters-group">
+        <label>Chapitres</label>
+
+        <textarea
+          rows="6"
+          formControlName="chapters"
+          placeholder="Un chapitre par ligne :
+Architecture MVC
+Spring Data JPA
+Controllers REST"
+        ></textarea>
+      </div>
+
+    </div>
+
+    <button
+      type="submit"
+      class="button button-ai-generate"
+      [disabled]="aiGenerating"
+    >
+      {{
+        aiGenerating
+          ? 'Génération en cours...'
+          : '✨ Générer le planning'
+      }}
+    </button>
+  </form>
+
+  <div
+    *ngIf="generatedTasks.length > 0"
+    class="generated-plan"
+  >
+
+    <div class="generated-header">
+      <div>
+        <span class="section-label">
+          Planning proposé
+        </span>
+
+        <h3>Modifiez ou supprimez les séances</h3>
+      </div>
+
+      <button
+        type="button"
+        class="button button-secondary"
+        (click)="clearGeneratedPlan()"
+      >
+        Tout effacer
+      </button>
+    </div>
+
+    <article
+      *ngFor="
+        let task of generatedTasks;
+        let index = index
+      "
+      class="generated-task-card"
+    >
+
+      <strong class="generated-task-number">
+        Séance {{ index + 1 }}
+      </strong>
+
+      <button
+        type="button"
+        class="remove-generated-button"
+        (click)="removeGeneratedTask(index)"
+      >
+        ×
+      </button>
+
+      <div class="generated-task-grid">
+
+        <div class="form-group generated-title">
+          <label>Titre</label>
+
+          <input
+            type="text"
+            [(ngModel)]="task.title"
+            [ngModelOptions]="{ standalone: true }"
+          >
+        </div>
+
+        <div class="form-group">
+          <label>Matière</label>
+
+          <input
+            type="text"
+            [(ngModel)]="task.subject"
+            [ngModelOptions]="{ standalone: true }"
+          >
+        </div>
+
+        <div class="form-group">
+          <label>Date</label>
+
+          <input
+            type="date"
+            [(ngModel)]="task.studyDate"
+            [ngModelOptions]="{ standalone: true }"
+          >
+        </div>
+
+        <div class="form-group">
+          <label>Heure</label>
+
+          <input
+            type="time"
+            [(ngModel)]="task.startTime"
+            [ngModelOptions]="{ standalone: true }"
+          >
+        </div>
+
+        <div class="form-group">
+          <label>Durée en minutes</label>
+
+          <input
+            type="number"
+            min="15"
+            max="600"
+            step="15"
+            [(ngModel)]="task.durationMinutes"
+            [ngModelOptions]="{ standalone: true }"
+          >
+        </div>
+
+        <div class="form-group">
+          <label>Priorité</label>
+
+          <select
+            [(ngModel)]="task.priority"
+            [ngModelOptions]="{ standalone: true }"
+          >
+            <option value="LOW">Faible</option>
+            <option value="MEDIUM">Moyenne</option>
+            <option value="HIGH">Élevée</option>
+          </select>
+        </div>
+
+        <div class="form-group generated-description">
+          <label>Description</label>
+
+          <textarea
+            rows="3"
+            [(ngModel)]="task.description"
+            [ngModelOptions]="{ standalone: true }"
+          ></textarea>
+        </div>
+
+      </div>
+    </article>
+
+    <div class="save-plan-actions">
+      <span>
+        {{ generatedTasks.length }}
+        séance(s) prête(s)
+      </span>
+
+      <button
+        type="button"
+        class="button button-save-plan"
+        [disabled]="aiSaving"
+        (click)="saveGeneratedPlan()"
+      >
+        {{
+          aiSaving
+            ? 'Enregistrement...'
+            : 'Enregistrer toutes les tâches'
+        }}
+      </button>
+    </div>
+
+  </div>
+
+</section>
 
     <!-- Formulaire -->
 
