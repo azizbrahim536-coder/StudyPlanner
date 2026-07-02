@@ -15,7 +15,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/tasks")
-@CrossOrigin(origins = "http://localhost:4201")
+@CrossOrigin(origins = "http://localhost:4200")
 public class StudyTaskController {
 
     private final StudyTaskService studyTaskService;

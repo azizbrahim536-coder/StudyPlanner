@@ -1,0 +1,604 @@
+<div class="page-wrapper">
+
+  <header class="hero">
+
+    <div class="hero-content">
+      <span class="hero-badge">
+        Study Planner
+      </span>
+
+      <h1>
+        Organisez vos études et atteignez vos objectifs
+      </h1>
+
+      <p>
+        Planifiez vos séances, suivez votre progression
+        et gérez vos priorités.
+      </p>
+    </div>
+
+    <div class="hero-icon">
+      📚
+    </div>
+
+  </header>
+
+  <main class="container">
+
+    <!-- Statistiques -->
+
+    <section class="statistics-grid">
+
+      <article class="stat-card">
+        <div class="stat-icon stat-total">
+          📋
+        </div>
+
+        <div>
+          <span>Total</span>
+          <strong>{{ statistics.total }}</strong>
+        </div>
+      </article>
+
+      <article class="stat-card">
+        <div class="stat-icon stat-todo">
+          ⏳
+        </div>
+
+        <div>
+          <span>À faire</span>
+          <strong>{{ statistics.todo }}</strong>
+        </div>
+      </article>
+
+      <article class="stat-card">
+        <div class="stat-icon stat-progress">
+          🚀
+        </div>
+
+        <div>
+          <span>En cours</span>
+          <strong>{{ statistics.inProgress }}</strong>
+        </div>
+      </article>
+
+      <article class="stat-card">
+        <div class="stat-icon stat-completed">
+          ✅
+        </div>
+
+        <div>
+          <span>Terminées</span>
+          <strong>{{ statistics.completed }}</strong>
+        </div>
+      </article>
+
+    </section>
+
+    <!-- Formulaire -->
+
+    <section class="form-card">
+
+      <div class="section-header">
+
+        <div>
+          <span class="section-label">
+            {{
+              editingId === null
+                ? 'Nouvelle planification'
+                : 'Modification'
+            }}
+          </span>
+
+          <h2>
+            {{
+              editingId === null
+                ? 'Planifier une séance'
+                : 'Modifier la séance'
+            }}
+          </h2>
+        </div>
+
+        <button
+          *ngIf="editingId !== null"
+          type="button"
+          class="button button-secondary"
+          (click)="resetForm()"
+        >
+          Annuler
+        </button>
+
+      </div>
+
+      <div
+        *ngIf="successMessage"
+        class="alert alert-success"
+      >
+        {{ successMessage }}
+      </div>
+
+      <div
+        *ngIf="errorMessage"
+        class="alert alert-error"
+      >
+        {{ errorMessage }}
+      </div>
+
+      <form
+        [formGroup]="taskForm"
+        (ngSubmit)="saveTask()"
+      >
+
+        <div class="form-grid">
+
+          <div class="form-group form-group-large">
+
+            <label for="title">
+              Titre
+            </label>
+
+            <input
+              id="title"
+              type="text"
+              formControlName="title"
+              placeholder="Exemple : Réviser Spring Boot"
+            >
+
+            <small
+              class="field-error"
+              *ngIf="
+                taskForm.get('title')?.touched &&
+                taskForm.get('title')?.hasError('required')
+              "
+            >
+              Le titre est obligatoire.
+            </small>
+
+          </div>
+
+          <div class="form-group">
+
+            <label for="subject">
+              Matière
+            </label>
+
+            <input
+              id="subject"
+              type="text"
+              formControlName="subject"
+              placeholder="Développement Web"
+            >
+
+            <small
+              class="field-error"
+              *ngIf="
+                taskForm.get('subject')?.touched &&
+                taskForm.get('subject')?.hasError('required')
+              "
+            >
+              La matière est obligatoire.
+            </small>
+
+          </div>
+
+          <div class="form-group form-group-full">
+
+            <label for="description">
+              Description
+            </label>
+
+            <textarea
+              id="description"
+              formControlName="description"
+              rows="4"
+              placeholder="Décrivez ce que vous souhaitez étudier..."
+            ></textarea>
+
+          </div>
+
+          <div class="form-group">
+
+            <label for="studyDate">
+              Date
+            </label>
+
+            <input
+              id="studyDate"
+              type="date"
+              formControlName="studyDate"
+            >
+
+          </div>
+
+          <div class="form-group">
+
+            <label for="startTime">
+              Heure de début
+            </label>
+
+            <input
+              id="startTime"
+              type="time"
+              formControlName="startTime"
+            >
+
+          </div>
+
+          <div class="form-group">
+
+            <label for="durationMinutes">
+              Durée en minutes
+            </label>
+
+            <input
+              id="durationMinutes"
+              type="number"
+              min="15"
+              max="600"
+              step="15"
+              formControlName="durationMinutes"
+            >
+
+            <small
+              class="field-error"
+              *ngIf="
+                taskForm.get('durationMinutes')?.touched &&
+                taskForm.get('durationMinutes')?.invalid
+              "
+            >
+              La durée doit être comprise entre 15 et 600 minutes.
+            </small>
+
+          </div>
+
+          <div class="form-group">
+
+            <label for="priority">
+              Priorité
+            </label>
+
+            <select
+              id="priority"
+              formControlName="priority"
+            >
+              <option value="LOW">
+                Faible
+              </option>
+
+              <option value="MEDIUM">
+                Moyenne
+              </option>
+
+              <option value="HIGH">
+                Élevée
+              </option>
+            </select>
+
+          </div>
+
+          <div class="form-group">
+
+            <label for="status">
+              Statut
+            </label>
+
+            <select
+              id="status"
+              formControlName="status"
+            >
+              <option value="TODO">
+                À faire
+              </option>
+
+              <option value="IN_PROGRESS">
+                En cours
+              </option>
+
+              <option value="COMPLETED">
+                Terminée
+              </option>
+            </select>
+
+          </div>
+
+        </div>
+
+        <button
+          type="submit"
+          class="button button-primary save-button"
+          [disabled]="saving"
+        >
+          {{
+            saving
+              ? 'Enregistrement...'
+              : editingId === null
+                ? 'Ajouter la séance'
+                : 'Enregistrer les modifications'
+          }}
+        </button>
+
+      </form>
+
+    </section>
+
+    <!-- Liste et filtres -->
+
+    <section class="tasks-section">
+
+      <div class="tasks-heading">
+
+        <div>
+          <span class="section-label">
+            Planning
+          </span>
+
+          <h2>
+            Mes séances d’étude
+          </h2>
+        </div>
+
+      </div>
+
+      <div class="filters">
+
+        <input
+          type="search"
+          [formControl]="searchControl"
+          placeholder="Rechercher..."
+          (keyup.enter)="loadTasks()"
+        >
+
+        <input
+          type="text"
+          [formControl]="subjectControl"
+          placeholder="Matière..."
+          (keyup.enter)="loadTasks()"
+        >
+
+        <select
+          [formControl]="statusControl"
+          (change)="loadTasks()"
+        >
+          <option value="">
+            Tous les statuts
+          </option>
+
+          <option value="TODO">
+            À faire
+          </option>
+
+          <option value="IN_PROGRESS">
+            En cours
+          </option>
+
+          <option value="COMPLETED">
+            Terminées
+          </option>
+        </select>
+
+        <select
+          [formControl]="priorityControl"
+          (change)="loadTasks()"
+        >
+          <option value="">
+            Toutes les priorités
+          </option>
+
+          <option value="LOW">
+            Faible
+          </option>
+
+          <option value="MEDIUM">
+            Moyenne
+          </option>
+
+          <option value="HIGH">
+            Élevée
+          </option>
+        </select>
+
+        <button
+          type="button"
+          class="button button-primary"
+          (click)="loadTasks()"
+        >
+          Rechercher
+        </button>
+
+        <button
+          type="button"
+          class="button button-secondary"
+          (click)="clearFilters()"
+        >
+          Effacer
+        </button>
+
+      </div>
+
+      <div
+        *ngIf="loading"
+        class="state-message"
+      >
+        Chargement des séances...
+      </div>
+
+      <div
+        *ngIf="!loading && tasks.length === 0"
+        class="empty-state"
+      >
+        <div class="empty-icon">
+          📖
+        </div>
+
+        <h3>
+          Aucune séance trouvée
+        </h3>
+
+        <p>
+          Commencez par planifier votre première séance.
+        </p>
+      </div>
+
+      <div
+        *ngIf="!loading && tasks.length > 0"
+        class="tasks-grid"
+      >
+
+        <article
+          *ngFor="
+            let task of tasks;
+            trackBy: trackTask
+          "
+          class="task-card"
+          [class.task-completed]="task.status === 'COMPLETED'"
+          [class.task-overdue]="isOverdue(task)"
+        >
+
+          <div class="task-card-header">
+
+            <span
+              class="priority-badge"
+              [ngClass]="
+                'priority-' + task.priority.toLowerCase()
+              "
+            >
+              {{ getPriorityLabel(task.priority) }}
+            </span>
+
+            <span
+              class="status-badge"
+              [ngClass]="
+                'status-' + task.status.toLowerCase()
+              "
+            >
+              {{ getStatusLabel(task.status) }}
+            </span>
+
+          </div>
+
+          <div class="task-body">
+
+            <span class="task-subject">
+              {{ task.subject }}
+            </span>
+
+            <h3>
+              {{ task.title }}
+            </h3>
+
+            <p>
+              {{
+                task.description ||
+                'Aucune description fournie.'
+              }}
+            </p>
+
+            <div class="task-information">
+
+              <div>
+                <span>📅</span>
+
+                {{
+                  task.studyDate
+                    | date:'dd/MM/yyyy'
+                }}
+              </div>
+
+              <div>
+                <span>🕒</span>
+
+                {{ task.startTime.substring(0, 5) }}
+              </div>
+
+              <div>
+                <span>⏱️</span>
+
+                {{ task.durationMinutes }} minutes
+              </div>
+
+            </div>
+
+            <div
+              *ngIf="isOverdue(task)"
+              class="overdue-message"
+            >
+              ⚠️ Cette séance est en retard
+            </div>
+
+          </div>
+
+          <div class="status-actions">
+
+            <button
+              *ngIf="task.status === 'TODO'"
+              type="button"
+              class="button button-progress"
+              (click)="
+                changeTaskStatus(
+                  task,
+                  'IN_PROGRESS'
+                )
+              "
+            >
+              Commencer
+            </button>
+
+            <button
+              *ngIf="task.status !== 'COMPLETED'"
+              type="button"
+              class="button button-complete"
+              (click)="
+                changeTaskStatus(
+                  task,
+                  'COMPLETED'
+                )
+              "
+            >
+              Terminer
+            </button>
+
+            <button
+              *ngIf="task.status === 'COMPLETED'"
+              type="button"
+              class="button button-secondary"
+              (click)="
+                changeTaskStatus(
+                  task,
+                  'TODO'
+                )
+              "
+            >
+              Rouvrir
+            </button>
+
+          </div>
+
+          <div class="task-actions">
+
+            <button
+              type="button"
+              class="button button-edit"
+              (click)="editTask(task)"
+            >
+              Modifier
+            </button>
+
+            <button
+              type="button"
+              class="button button-delete"
+              (click)="deleteTask(task)"
+            >
+              Supprimer
+            </button>
+
+          </div>
+
+        </article>
+
+      </div>
+
+    </section>
+
+  </main>
+
+</div>
